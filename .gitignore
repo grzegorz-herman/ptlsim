@@ -1,0 +1,8 @@
+*.o
+
+.depend
+cpuid
+dstbuild.temp.cpp
+ptlsim
+ptlsim.dst
+ptlstats

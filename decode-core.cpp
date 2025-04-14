@@ -1956,6 +1956,14 @@ bool TraceDecoder::translate() {
 
   assert(!invalid);
 
+  if (logable(5) | log_code_page_ops) {
+    logfile << "instruction at ", (void*)ripstart, " (", (rip-ripstart), " bytes): ";
+    foreach (i, (rip-ripstart)) {
+      logfile << hexstring(insnbytes[byteoffset - (rip-ripstart) + i], 8);
+    }
+    logfile << endl;
+  }
+
   if (end_of_block) {
     // Block ended with a branch: close the uop and exit
     stats.decoder.bb_decode_type.all_insns_fast += (!some_insns_complex);

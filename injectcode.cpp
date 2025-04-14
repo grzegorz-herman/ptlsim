@@ -29,15 +29,16 @@ struct FarJumpDescriptor {
 };
 
 static inline void switch_stack_and_jump(void* code, void* stack, bool use64) {
+
+#ifdef __x86_64__
+  asm volatile("mov %[code],%%rax\n"
+               "mov %[stack],%%rsp\n"
+               "jmp *%%rax\n" : : [code] "m" (code), [stack] "m" (stack));
+#else
   FarJumpDescriptor desc;
   desc.offset = LO32((Waddr)code);
   desc.seg = (use64) ? 0x33 : 0x23;
 
-#ifdef __x86_64__
-  asm volatile("lea %[desc],%%rax\n"
-               "mov %[stack],%%rsp\n"
-               "ljmp *(%%rax)\n" : : [desc] "m" (desc), [stack] "m" (stack));
-#else
   asm volatile("lea %[desc],%%eax\n"
                "mov %[stack],%%esp\n"
                "ljmp *(%%eax)\n" : : [desc] "m" (desc), [stack] "m" (stack));
@@ -55,6 +56,7 @@ declare_syscall3(__NR_open, int, syscall_open, const char*, filename, int, flags
 declare_syscall3(__NR_mprotect, int, syscall_mprotect, const void*, addr, size_t, len, int, prot);
 declare_syscall1(__NR_exit, void, syscall_exit, int, status);
 declare_syscall1(__NR_close, void, syscall_close, int, status);
+declare_syscall2(__NR_nanosleep, int, syscall_nanosleep, const struct timespec*, req, struct timespec*, rem);
   
 #ifdef __x86_64__
 declare_syscall6(__NR_mmap, void*, syscall_mmap, void*, start, size_t, length, int, prot, int, flags, int, fd, unsigned long, offset);
@@ -91,7 +93,15 @@ typedef Elf64_Ehdr PTLsim_Elf_Ehdr;
 typedef Elf64_Phdr PTLsim_Elf_Phdr;
 #endif
 
+void sleep(int seconds) {
+  struct timespec delay;
+  delay.tv_sec = seconds;
+  delay.tv_nsec = 0;
+  syscall_nanosleep(&delay, NULL);
+}
+
 void ptlsim_loader_thunk_name(LoaderInfo* info) {
+
   if (info->initialize) {
     byte* loader_temp_code = (byte*)PTLSIM_THUNK_PAGE;
 

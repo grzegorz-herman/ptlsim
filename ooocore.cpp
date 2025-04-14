@@ -692,13 +692,13 @@ ThreadContext& ReorderBufferEntry::getthread() const { return *getcore().threads
 
 issueq_tag_t ReorderBufferEntry::get_tag() {
   int mask = ((1 << MAX_THREADS_BIT) - 1) << MAX_ROB_IDX_BIT;
-  if (logable(100)) logfile << " get_tag() thread ", (void*) threadid, " rob idx ", (void*)idx, " mask ", (void*)mask, endl;
+  if (logable(100)) logfile << " get_tag() thread ", (void*)(Waddr)threadid, " rob idx ", (void*)(Waddr)idx, " mask ", (void*)(Waddr)mask, endl;
 
   assert(!(idx & mask)); 
   assert(!(threadid >> MAX_THREADS_BIT));
   //  int threadid = 1;  
   issueq_tag_t rc = (idx | (threadid << MAX_ROB_IDX_BIT));
-  if (logable(100)) logfile <<  " tag ", (void*) rc, endl;
+  if (logable(100)) logfile <<  " tag ", (void*)(Waddr)rc, endl;
   return rc;
 }
 

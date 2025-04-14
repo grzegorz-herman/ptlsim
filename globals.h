@@ -115,8 +115,8 @@ template <typename T> struct ispointer_t<T*> { static const bool pointer = 1; };
 #define isprimitive(T) (isprimitive_t<T>::primitive)
 
 // Null pointer to the specified object type, for computing field offsets
-template <typename T> static inline T* nullptr() { return (T*)(Waddr)0; }
-#define offsetof_(T, field) ((Waddr)(&(nullptr<T>()->field)) - ((Waddr)nullptr<T>()))
+template <typename T> static inline T* nullptr_() { return (T*)(Waddr)0; }
+#define offsetof_(T, field) ((Waddr)(&(nullptr_<T>()->field)) - ((Waddr)nullptr_<T>()))
 #define baseof(T, field, ptr) ((T*)(((byte*)(ptr)) - offsetof_(T, field)))
 // Restricted (non-aliased) pointers:
 #define noalias __restrict__
@@ -221,8 +221,8 @@ template <int i> inline W16 x86_sse_pextrw(vec16b a) { W32 rd; asm("pextrw %[i],
 
 inline vec16b x86_sse_ldvbu(const vec16b* m) { vec16b rd; asm("movdqu %[m],%[rd]" : [rd] "=x" (rd) : [m] "xm" (*m)); return rd; }
 inline void x86_sse_stvbu(vec16b* m, const vec16b ra) { asm("movdqu %[ra],%[m]" : [m] "=xm" (*m) : [ra] "x" (ra) : "memory"); }
-inline vec8w x86_sse_ldvwu(const vec8w* m) { vec8w rd; asm("movdqu %[m],%[rd]" : [rd] "=x" (rd) : [m] "xm" (*m)); return rd; }
-inline void x86_sse_stvwu(vec8w* m, const vec8w ra) { asm("movdqu %[ra],%[m]" : [m] "=xm" (*m) : [ra] "x" (ra) : "memory"); }
+inline vec8w x86_sse_ldvwu(const vec8w* m) { vec8w rd; asm("movdqu %[m],%[rd]" : [rd] "=x" (rd) : [m] "m" (*m)); return rd; }
+inline void x86_sse_stvwu(vec8w* m, const vec8w ra) { asm("movdqu %[ra],%[m]" : [m] "=m" (*m) : [ra] "x" (ra) : "memory"); }
 
 inline vec16b x86_sse_zerob() { vec16b rd; asm("pxor %[rd],%[rd]" : [rd] "+x" (rd)); return rd; }
 inline vec16b x86_sse_onesb() { vec16b rd; asm("pcmpeqb %[rd],%[rd]" : [rd] "+x" (rd)); return rd; }
@@ -515,7 +515,7 @@ struct constbits {
 asmlinkage {
 #include <unistd.h>
 #include <sys/types.h>
-#include <ctype.h>
+//#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

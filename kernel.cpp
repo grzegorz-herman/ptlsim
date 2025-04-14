@@ -26,6 +26,8 @@
 #define __INSIDE_PTLSIM__
 #include <ptlcalls.h>
 
+extern "C" void _init();
+
 // Userspace PTLsim only supports one VCPU:
 int current_vcpuid() { return 0; }
 
@@ -1587,9 +1589,8 @@ int ptlsim_inject(int argc, char** argv) {
     assert(false);
   }
   void* thunk_source = (void*)&ptlsim_loader_thunk_64bit;
-  int thunk_size = LOADER_THUNK_SIZE;
 
-  if (DEBUG) cerr << "Saving old code (", thunk_size, " bytes) at thunk rip ", (void*)regs.rip, " in pid ", pid, endl;
+  if (DEBUG) cerr << "Saving old code (", LOADER_THUNK_SIZE, " bytes) at thunk rip ", (void*)regs.rip, " in pid ", pid, endl;
   copy_from_process_memory(pid, &info.saved_thunk, (void*)info.origrip, LOADER_THUNK_SIZE);
 
   if (DEBUG) cerr << "Writing new code (", LOADER_THUNK_SIZE, " bytes) at thunk rip ", (void*)regs.rip, " in pid ", pid, endl;
@@ -2134,7 +2135,8 @@ extern "C" void* ptlsim_preinit(void* origrsp, void* nextinit) {
     // We're still a normal process - don't do anything special
     stack_min_addr = (Waddr)origrsp;
     environ = find_environ<Waddr>((const byte*)origrsp);
-    call_global_constuctors();
+    //call_global_constuctors();
+    _init();
     return origrsp;
   }
 
@@ -2223,7 +2225,8 @@ extern "C" void* ptlsim_preinit(void* origrsp, void* nextinit) {
 
   environ = find_environ<Waddr>(sp);
 
-  call_global_constuctors();
+  //call_global_constuctors();
+  _init();
 
   tls->stack = (void*)sp;
 

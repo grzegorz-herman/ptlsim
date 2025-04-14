@@ -84,7 +84,7 @@ struct ConfigurationParser: public T {
   }
 
   void add(stringbuf& field, const char* name, const char* description) {
-    options.addentry(this, field, OPTION_TYPE_STRING, name, description);
+    options.addentry(this, &field, OPTION_TYPE_STRING, name, description);
   }
   
   void section(const char* name) {

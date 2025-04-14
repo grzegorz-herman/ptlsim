@@ -67,13 +67,13 @@ struct MemoryManagerEvent {
       os << bytes, " bytes";
       break;
     case PTL_MM_EVENT_RECLAIM_CALL:
-      os << "call ", (void*)address;
+      os << "call ", (void*)(Waddr)address;
       break;
     case PTL_MM_EVENT_CLEANUP:
       os << "cleanup pass";
       break;
     case PTL_MM_EVENT_INIT:
-      os << "initialize: heap range: ", (void*)caller, "-", (void*)address, " (", bytes, " bytes)";
+      os << "initialize: heap range: ", (void*)(Waddr)caller, "-", (void*)(Waddr)address, " (", bytes, " bytes)";
       break;
     default:
       abort();

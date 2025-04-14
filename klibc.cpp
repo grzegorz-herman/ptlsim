@@ -2071,20 +2071,3 @@ extern "C" int __cxa_guard_acquire() { return 0; }
 extern "C" int __cxa_guard_release() { return 0; }
 
 extern "C" int atexit(void (*function)(void)) { return 0; }
-
-typedef void (*ctor_func_ptr) (void);
-
-extern ctor_func_ptr ctor_list[];
-extern ctor_func_ptr ctor_list_end[];
-
-//
-// See http://gcc.gnu.org/onlinedocs/gccint/Initialization.html
-//
-void call_global_constuctors() {
-
-  int ctor_count = &ctor_list_end[0] - &ctor_list[0];
-
-  foreach (i, ctor_count) {
-    ctor_list[i]();
-  }
-}

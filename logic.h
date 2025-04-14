@@ -13,7 +13,7 @@
 
 extern ostream logfile;
 
-template <typename T> 
+template <typename T>
 struct latch {
   T data;
   T newdata;
@@ -43,7 +43,7 @@ struct latch {
 
 template <typename T, int size>
 struct SynchronousRegisterFile {
-  SynchronousRegisterFile() { 
+  SynchronousRegisterFile() {
     reset();
   }
 
@@ -56,8 +56,8 @@ struct SynchronousRegisterFile {
 
   latch<T> data[size];
 
-  latch<T>& operator [](int i) { 
-    return data[i]; 
+  latch<T>& operator [](int i) {
+    return data[i];
   }
 
   void clock(bool clkenable = true) {
@@ -74,7 +74,7 @@ struct SynchronousRegisterFile {
 // Queue
 //
 
-// Iterate forward through queue from head to tail 
+// Iterate forward through queue from head to tail
 #define foreach_forward(Q, i) for (int i = (Q).head; i != (Q).tail; i = add_index_modulo(i, +1, (Q).size))
 
 // Iterate forward through queue from the specified entry until the tail
@@ -230,7 +230,7 @@ struct FixedQueue: public array<T, SIZE> {
       const T& entry = (*this)[i];
       os << "  slot ", intstring(i, 3), ": ", entry, endl;
     }
-    
+
     return os;
   }
 };
@@ -263,13 +263,12 @@ struct Queue: public FixedQueue<T, SIZE> {
 };
 
 template <class T, int size>
-ostream& operator <<(ostream& os, Queue<T, size>& queue) {
+ostream& operator <<(ostream& os, const Queue<T, size>& queue) {
   os << "Queue<", size, "]: head ", queue.head, " to tail ", queue.tail, " (", queue.count, " entries):", endl;
   foreach_forward(queue, i) {
     const T& entry = queue[i];
     os << "  ", entry, endl;
   }
-
   return os;
 }
 
@@ -301,7 +300,7 @@ struct HistoryBuffer: public array<T, size> {
 
   /*
    * Undo last addition
-   */ 
+   */
   void undo() {
     this->data[current] = prevoldest;
     current = add_index_modulo(current, -1, size);
@@ -414,6 +413,10 @@ struct FullyAssociativeTags {
       tags[way] = target;
     }
     use(way);
+    if (evictmap.allset()) {
+        evictmap = 0;
+        use(way);
+    }
     return way;
   }
 
@@ -572,7 +575,7 @@ struct FullyAssociativeTagsNbitOneHot {
       *(((byte*)(&tags[i])) + index) = (byte)t;
       t >>= 8;
     }
-    
+
     tagsmirror[index] = tag;
     valid[index] = 1;
     evictmap[index] = 1;
@@ -751,6 +754,11 @@ struct FullyAssociativeArray {
     return (way < 0) ? null : &data[way];
   }
 
+  V* match(T tag) {
+    int way = tags.match(tag);
+    return (way < 0) ? NULL : &data[way];
+  }
+
   V* select(T tag, T& oldtag) {
     int way = tags.select(tag, oldtag);
 
@@ -801,7 +809,7 @@ struct FullyAssociativeArray {
     invalidate_way(way);
     return way;
   }
-  
+
   V& operator [](int way) { return data[way]; }
 
   V* operator ()(T tag) { return select(tag); }
@@ -850,6 +858,10 @@ struct AssociativeArray {
     return sets[setof(addr)].probe(tagof(addr));
   }
 
+  V* match(T addr) {
+    return sets[setof(addr)].match(tagof(addr));
+  }
+
   V* select(T addr, T& oldaddr) {
     return sets[setof(addr)].select(tagof(addr), oldaddr);
   }
@@ -859,8 +871,8 @@ struct AssociativeArray {
     return sets[setof(addr)].select(tagof(addr), dummy);
   }
 
-  void invalidate(T addr) {
-    sets[setof(addr)].invalidate(tagof(addr));
+  int invalidate(T addr) {
+    return sets[setof(addr)].invalidate(tagof(addr));
   }
 
   ostream& print(ostream& os) const {
@@ -1147,7 +1159,7 @@ struct LockableFullyAssociativeArray {
 
   int unlock(T tag) {
     int way = tags.probe(tag);
-    if (way < 0) return;
+    if (way < 0) return -1;
     unlock_way(way);
     if (tags.islocked(way)) stats::unlocked(data[way], tags[way], way);
     return way;
@@ -1455,7 +1467,7 @@ ostream& operator <<(ostream& os, const LockableCommitRollbackAssociativeArray<T
 template <typename T, typename V, int setcount, int waycount, int linesize, int maxdirty, typename stats = NullAssociativeArrayStatisticsCollector<T, V> >
 struct CommitRollbackCache: public LockableCommitRollbackAssociativeArray<T, V, setcount, waycount, linesize, stats> {
   typedef LockableCommitRollbackAssociativeArray<T, V, setcount, waycount, linesize, stats> array_t;
-  
+
   struct BackupCacheLine {
     W64* addr;
     W64 data[linesize / sizeof(W64)];
@@ -1463,7 +1475,7 @@ struct CommitRollbackCache: public LockableCommitRollbackAssociativeArray<T, V, 
 
   BackupCacheLine stores[maxdirty];
   BackupCacheLine* storetail;
-  
+
   CommitRollbackCache() {
     reset();
   }
@@ -1477,7 +1489,7 @@ struct CommitRollbackCache: public LockableCommitRollbackAssociativeArray<T, V, 
   // Invalidate lines in higher level caches if needed
   //
   void invalidate_upwards(T addr);
-  
+
   void invalidate(T addr) {
     array_t::invalidate(addr);
     invalidate_upwards(addr);
@@ -1522,7 +1534,7 @@ struct CommitRollbackCache: public LockableCommitRollbackAssociativeArray<T, V, 
     }
     storetail = stores;
   }
-  
+
   void complete() { }
 };
 
@@ -1823,7 +1835,7 @@ struct FullyAssociativeTags16bit {
   void decrement(base_t amount = 1) {
     foreach (i, chunkcount) { tags[i] = x86_sse_psubusw(tags[i], prep(amount)); }
   }
-      
+
   void increment(base_t amount = 1) {
     foreach (i, chunkcount) { tags[i] = x86_sse_paddusw(tags[i], prep(amount)); }
   }
